@@ -8,6 +8,10 @@
   },
   "author": "Wei Lu <luwei.here@gmail.com>",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weilu/bitcoin-tx-graph.git"
+  },
   "devDependencies": {
     "bitcoinjs-lib": "^1.0.2",
     "mocha": "^1.21.4",
