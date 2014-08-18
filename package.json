@@ -1,0 +1,16 @@
+{
+  "name": "bitcoin-tx-graph",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test"
+  },
+  "author": "Wei Lu <luwei.here@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "bitcoinjs-lib": "^1.0.2",
+    "mocha": "^1.21.4",
+    "sinon": "^1.10.3"
+  }
+}
