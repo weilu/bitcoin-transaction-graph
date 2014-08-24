@@ -75,4 +75,12 @@ describe('TxGraph', function() {
       assertTxIdsSame(orderedTxs[2], [txs[4], txs[6]])
     })
   })
+
+  describe('findTxById', function() {
+    it('returns the transaction', function() {
+      var id = fakeTxId(5)
+      var tx = graph.findTxById(id)
+      assert.equal(tx.getId(), id)
+    })
+  })
 })

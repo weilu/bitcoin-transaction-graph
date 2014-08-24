@@ -36,6 +36,10 @@ TxGraph.prototype.getInOrderTxs = function() {
   })
 }
 
+TxGraph.prototype.findTxById = function(id) {
+  return findNodeById(id, this.heads).tx
+}
+
 function values(obj) {
   var results = []
   for(var k in obj) {
