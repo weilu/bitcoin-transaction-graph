@@ -41,6 +41,8 @@ describe('TxGraph', function() {
     for(var i=0; i<7; i++) {
       txs[i] = fakeTx(i)
     }
+    txs[0].addInput(fakeTxId(7), 0)
+    txs[1].addInput(fakeTxId(8), 0)
     txs[2].addInput(txs[0].getId(), 0)
     txs[2].addInput(txs[1].getId(), 1)
     txs[3].addInput(txs[1].getId(), 0)

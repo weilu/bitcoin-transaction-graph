@@ -26,14 +26,19 @@ TxGraph.prototype.addTx = function(tx) {
 }
 
 TxGraph.prototype.getInOrderTxs = function() {
-  return bft(this.heads).reverse().map(function(group){
+  var results = []
+
+  bft(this.heads).reverse().forEach(function(group) {
     var txs = group.reduce(function(memo, n) {
       if(n.tx) memo[n.tx.getId()] = n.tx
       return memo
     }, {})
 
-    return values(txs)
+    txs = values(txs)
+    if(txs.length > 0) { results.push(txs) }
   })
+
+  return results
 }
 
 TxGraph.prototype.findTxById = function(id) {
