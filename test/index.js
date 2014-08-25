@@ -1,7 +1,9 @@
 var assert = require('assert')
 var sinon = require('sinon')
 var Transaction = require('bitcoinjs-lib').Transaction
+var testnet = require('bitcoinjs-lib').networks.testnet
 var TxGraph = require('../index')
+var fixtures = require('./fixtures')
 
 function fakeTxHash(i) {
   var hash = new Buffer(32)
@@ -84,5 +86,99 @@ describe('TxGraph', function() {
       var tx = graph.findTxById(id)
       assert.equal(tx.getId(), id)
     })
+  })
+
+  describe('fees and amounts for regular pubkeyhash type of transaction', function() {
+    var txs = {}
+
+    var graph = new TxGraph()
+    var tx = fixtures.pubkeyhash
+    var txObj = Transaction.fromHex(tx.hex)
+    graph.addTx(txObj)
+    txs[tx.txid] = tx
+
+    tx.ins.forEach(function(input) {
+      graph.addTx(Transaction.fromHex(input.prevTx.hex))
+      txs[input.prevTx.txid] = input.prevTx
+
+      input.prevTx.ins.forEach(function(input) {
+        graph.addTx(Transaction.fromHex(input.prevTx.hex))
+        txs[input.prevTx.txid] = input.prevTx
+      })
+    })
+
+    describe('calculateFees', function() {
+      it('attaches expected fees to transactions', function() {
+        graph.calculateFees()
+        graph.getInOrderTxs().forEach(function(group) {
+          group.forEach(function(t) {
+            assert.equal(t.fee, txs[t.getId()].fee)
+          })
+        })
+      })
+    })
+
+    describe('calculateFeesAndValues', function() {
+      it('attaches expected fees to transactions', function() {
+        graph.getInOrderTxs().forEach(function(group) {
+          graph.calculateFeesAndValues()
+          group.forEach(function(t) {
+            assert.equal(t.fee, txs[t.getId()].fee)
+          })
+        })
+      })
+
+      describe('values', function() {
+        it('my address is one of the inputs', function() {
+          var input = tx.ins[0]
+          graph.calculateFeesAndValues(input.address, testnet)
+          assert.equal(graph.findTxById(tx.txid).value, input.value)
+          assert.equal(graph.findTxById(input.prevTx.txid).value, input.prevTx.ins[0].prevTx.value)
+        })
+
+        it('all inputs are my addresses', function() {
+          graph.calculateFeesAndValues(tx.ins.map(function(input) {
+            return input.address
+          }), testnet)
+
+          assert.equal(graph.findTxById(tx.txid).value, tx.ins.reduce(function(memo, input) {
+            return input.value + memo
+          }, 0))
+          tx.ins.forEach(function(input) {
+            assert.equal(graph.findTxById(input.prevTx.txid).value, input.prevTx.ins[0].prevTx.value)
+          })
+        })
+
+        it('my address is the first input and the first output', function() {
+          var input = tx.ins[0]
+          var output = tx.outs[0]
+
+          graph.calculateFeesAndValues([ input.address, output.address ], testnet)
+
+          assert.equal(graph.findTxById(tx.txid).value, input.value + output.value)
+          assert.equal(graph.findTxById(input.prevTx.txid).value, input.prevTx.ins[0].prevTx.value)
+        })
+
+        it('all inputs are my addresses, plus the first output', function() {
+          var output = tx.outs[0]
+          var addresses = tx.ins.map(function(input) {
+            return input.address
+          }).concat(output.address)
+
+          graph.calculateFeesAndValues(addresses, testnet)
+
+          var expectedValue = tx.ins.reduce(function(memo, input) {
+            return input.value + memo
+          }, 0) + output.value
+          assert.equal(graph.findTxById(tx.txid).value, expectedValue)
+
+          tx.ins.forEach(function(input) {
+            assert.equal(graph.findTxById(input.prevTx.txid).value, input.prevTx.ins[0].prevTx.value)
+          })
+        })
+      })
+
+    })
+
   })
 })

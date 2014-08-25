@@ -1,3 +1,7 @@
+var Address = require('bitcoinjs-lib').Address
+var networks = require('bitcoinjs-lib').networks
+var assert = require('assert')
+
 function TxGraph() {
   this.heads = []
 }
@@ -45,6 +49,31 @@ TxGraph.prototype.findTxById = function(id) {
   return findNodeById(id, this.heads).tx
 }
 
+TxGraph.prototype.calculateFees = function() {
+  this.calculateFeesAndValues()
+}
+
+TxGraph.prototype.calculateFeesAndValues = function(addresses, network) {
+  addresses = addresses || []
+  if(!Array.isArray(addresses)) addresses = [addresses]
+
+  network = network || networks.bitcoin
+
+  var tails = values(this.heads.reduce(function(memo, head) {
+    return dfs(head, memo)
+  }, {}))
+  assertEmptyNodes(tails)
+
+  var tailsNext = tails.reduce(function(memo, node) {
+    return memo.concat(node.nextNodes)
+  }, [])
+  assertNoneFundingNodes(tailsNext, addresses, network)
+
+  this.heads.forEach(function(node) {
+    calculateFeesAndValuesForPath(node, addresses, network)
+  })
+}
+
 function values(obj) {
   var results = []
   for(var k in obj) {
@@ -62,6 +91,16 @@ function bft(nodes) {
   })
 
   return [nodes].concat(bft(children))
+}
+
+function dfs(start, results) {
+  if(start.prevNodes.length > 0) {
+    start.prevNodes.forEach(function(node) {
+      dfs(node, results)
+    })
+  } else {
+    results[start.id] = start
+  }
 }
 
 function findNodeById(txid, nodes) {
@@ -82,6 +121,84 @@ function findNodeById(txid, nodes) {
   })
 
   return findNodeById(txid, children)
+}
+
+function assertEmptyNodes(nodes) {
+  assert(nodes.every(function(node) {
+    return node.tx == null
+  }), "expect graph tails to contain only tx ids")
+}
+
+function assertNoneFundingNodes(nodes, addresses, network) {
+  assert(nodes.every(function(node) {
+      var outputAddresses = node.tx.outs.map(function(output) {
+        return Address.fromOutputScript(output.script, network).toString()
+      })
+      var partOfOutput = outputAddresses.some(function(address) {
+        addresses.indexOf(address) >= 0
+      })
+
+      return !partOfOutput
+  }), "expect graph to contain the input transactions of the first funding transactions")
+
+}
+
+function calculateFeesAndValuesForPath(node, addresses, network) {
+  if(node.prevNodes.length === 0) return;
+
+  var feeAndValue = calculateFeeAndValue(node, addresses, network)
+  node.tx.fee = feeAndValue.fee
+  node.tx.value = feeAndValue.value
+
+  node.prevNodes.forEach(function(n) {
+    calculateFeesAndValuesForPath(n, addresses, network)
+  })
+}
+
+function calculateFeeAndValue(node, addresses, network) {
+  var tx = node.tx
+
+  var inputFeeAndValue = tx.ins.reduce(function(memo, input) {
+    var buffer = new Buffer(input.hash)
+    Array.prototype.reverse.call(buffer)
+    var inputTxId = buffer.toString('hex')
+
+    var prevNode = node.prevNodes.filter(function(node) {
+      return node.id === inputTxId
+    })[0]
+
+    assert(prevNode != undefined, 'missing node in graph: ' + inputTxId)
+
+    if(!prevNode.tx) return NaN;
+
+    var output = prevNode.tx.outs[input.index]
+    memo.fee = memo.fee + output.value
+
+    var toAddress = Address.fromOutputScript(output.script, network).toString()
+    if(addresses.indexOf(toAddress) >= 0) {
+      memo.value = memo.value + output.value
+    }
+
+    return memo
+  }, {fee: 0, value: 0})
+
+  if(isNaN(inputFeeAndValue.fee)) return {};
+
+  var outputFeeAndValue = tx.outs.reduce(function(memo, output) {
+    memo.fee = memo.fee + output.value
+
+    var toAddress = Address.fromOutputScript(output.script, network).toString()
+    if(addresses.indexOf(toAddress) >= 0) {
+      memo.value = memo.value + output.value
+    }
+
+    return memo
+  }, {fee: 0, value: 0})
+
+  return {
+    fee: inputFeeAndValue.fee - outputFeeAndValue.fee,
+    value: outputFeeAndValue.value - inputFeeAndValue.value
+  }
 }
 
 function Node(id, tx, prevNodes, nextNodes) {
