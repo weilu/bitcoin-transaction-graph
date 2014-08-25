@@ -1,7 +1,7 @@
 var assert = require('assert')
 var sinon = require('sinon')
 var Transaction = require('bitcoinjs-lib').Transaction
-var TxGraph = require('./index')
+var TxGraph = require('../index')
 
 function fakeTxHash(i) {
   var hash = new Buffer(32)
@@ -79,7 +79,7 @@ describe('TxGraph', function() {
   })
 
   describe('findTxById', function() {
-    it('returns the transaction', function() {
+    it('returns the tx', function() {
       var id = fakeTxId(5)
       var tx = graph.findTxById(id)
       assert.equal(tx.getId(), id)
