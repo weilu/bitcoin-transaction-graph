@@ -27,8 +27,8 @@ function getTxIds(txs) {
   return txs.map(function(tx){ return tx.getId()})
 }
 
-function assertNodeIdsEqualTxIds(nodes, txs) {
-  assert.deepEqual(nodes.map(function(n){ return n.id }).sort(), getTxIds(txs).sort())
+function assertNodeIdsEqualTxIds(nodes, txids) {
+  assert.deepEqual(nodes.map(function(n){ return n.id }).sort(), txids.sort())
 }
 
 function assertTxIdsSame(txs1, txs2) {
@@ -63,11 +63,11 @@ describe('TxGraph', function() {
 
   describe('addTx', function() {
     it('constructs the graph as expected', function() {
-      assertNodeIdsEqualTxIds(graph.heads, [txs[6], txs[4]])
-      assertNodeIdsEqualTxIds(graph.heads[0].prevNodes, [txs[5]])
-      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes, [txs[2], txs[3]])
-      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes[0].prevNodes, [txs[0], txs[1]])
-      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes[1].prevNodes, [txs[1]])
+      assertNodeIdsEqualTxIds(graph.heads, [fakeTxId(6), fakeTxId(4)])
+      assertNodeIdsEqualTxIds(graph.heads[0].prevNodes, [fakeTxId(5)])
+      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes, [fakeTxId(2), fakeTxId(3)])
+      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes[0].prevNodes, [fakeTxId(0), fakeTxId(1)])
+      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes[1].prevNodes, [fakeTxId(1)])
     })
   })
 
@@ -85,6 +85,13 @@ describe('TxGraph', function() {
       var id = fakeTxId(5)
       var tx = graph.findTxById(id)
       assert.equal(tx.getId(), id)
+    })
+  })
+
+  describe('getTails', function() {
+    it('returns nodes that everybody else depends on', function() {
+      var tails = graph.getTails()
+      assertNodeIdsEqualTxIds(graph.getTails(), [fakeTxId(7), fakeTxId(8), fakeTxId(5)])
     })
   })
 

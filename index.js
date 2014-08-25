@@ -49,6 +49,14 @@ TxGraph.prototype.findTxById = function(id) {
   return findNodeById(id, this.heads).tx
 }
 
+TxGraph.prototype.getTails = function() {
+  var results = {}
+  this.heads.forEach(function(head) {
+    dfs(head, results)
+  })
+  return values(results)
+}
+
 TxGraph.prototype.calculateFees = function() {
   this.calculateFeesAndValues()
 }
@@ -59,9 +67,7 @@ TxGraph.prototype.calculateFeesAndValues = function(addresses, network) {
 
   network = network || networks.bitcoin
 
-  var tails = values(this.heads.reduce(function(memo, head) {
-    return dfs(head, memo)
-  }, {}))
+  var tails = this.getTails()
   assertEmptyNodes(tails)
 
   var tailsNext = tails.reduce(function(memo, node) {
