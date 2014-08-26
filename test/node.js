@@ -42,6 +42,11 @@ describe('Node', function() {
       assert.equal(node1.nextNodes.length, nextNodesLength)
       assert.equal(node2.prevNodes.length, prevNodesLength)
     })
+
+    it('does not add self', function() {
+      node1.addToNextNodes(node1)
+      assert(node1.nextNodes.indexOf(node1) < 0)
+    })
   })
 
   describe('removeFromNextNodes', function() {

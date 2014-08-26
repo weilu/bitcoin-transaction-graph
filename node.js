@@ -6,7 +6,7 @@ function Node(id, tx, prevNodes, nextNodes) {
 }
 
 Node.prototype.addToNextNodes = function(toAdd)  {
-  if(this.nextNodes.indexOf(toAdd) >= 0) return;
+  if(this.nextNodes.indexOf(toAdd) >= 0 || toAdd === this) return;
 
   this.nextNodes.push(toAdd)
   if(toAdd.prevNodes.indexOf(this) >= 0) {
