@@ -14,7 +14,7 @@ TxGraph.prototype.addTx = function(tx) {
   }
   node.tx = tx
 
-  node.prevNodes = tx.ins.map(function(txIn) {
+  var prevNodes = tx.ins.map(function(txIn) {
     var txinId = new Buffer(txIn.hash)
     Array.prototype.reverse.call(txinId)
     txinId = txinId.toString('hex')
@@ -22,11 +22,11 @@ TxGraph.prototype.addTx = function(tx) {
     return findNodeById(txinId, this.heads) || new Node(txinId)
   }, this)
 
-  node.prevNodes.forEach(function(n) {
+  prevNodes.forEach(function(n) {
     var i = this.heads.indexOf(n)
     if(i >= 0) this.heads.splice(i, 1)
 
-    n.nextNodes.push(node)
+    n.addToNextNodes(node)
   }, this)
 }
 
