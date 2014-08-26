@@ -1,6 +1,7 @@
 var Address = require('bitcoinjs-lib').Address
 var networks = require('bitcoinjs-lib').networks
 var assert = require('assert')
+var Node = require('./node')
 
 function TxGraph() {
   this.heads = []
@@ -205,13 +206,6 @@ function calculateFeeAndValue(node, addresses, network) {
     fee: inputFeeAndValue.fee - outputFeeAndValue.fee,
     value: outputFeeAndValue.value - inputFeeAndValue.value
   }
-}
-
-function Node(id, tx, prevNodes, nextNodes) {
-  this.id = id
-  this.tx = tx
-  this.prevNodes = prevNodes || []
-  this.nextNodes = nextNodes || []
 }
 
 module.exports = TxGraph
