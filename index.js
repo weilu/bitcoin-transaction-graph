@@ -31,19 +31,46 @@ TxGraph.prototype.addTx = function(tx) {
 }
 
 TxGraph.prototype.getInOrderTxs = function() {
-  var results = []
+  var components = []
+  this.heads.forEach(function(head) {
+    var exist = components.some(function(component) {
+      return component.nodes[head.id]
+    })
+    if(exist) return
 
-  bft(this.heads).reverse().forEach(function(group) {
-    var txs = group.reduce(function(memo, n) {
-      if(n.tx) memo[n.tx.getId()] = n.tx
-      return memo
-    }, {})
-
-    txs = values(txs)
-    if(txs.length > 0) { results.push(txs) }
+    var found = {}
+    bft([head], found)
+    components.push({head: head, nodes: found})
   })
 
-  return results
+  var results = []
+  components.forEach(function(component) {
+    var nodes = component.nodes
+    var path = dft(component.head)
+    path.forEach(function(n) {
+      delete nodes[n.id]
+    })
+
+    var changed = 1
+    while(changed) {
+      changed = 0
+      for(var id in nodes) {
+        var node = nodes[id]
+        if(insertToPath(path, node)) {
+          delete nodes[node.id]
+          changed++
+        }
+      }
+    }
+
+    results = results.concat(path)
+  })
+
+  return results.filter(function(node) {
+    return node.tx != null
+  }).map(function(node) {
+    return node.tx
+  })
 }
 
 TxGraph.prototype.findNodeById = function(id) {
@@ -89,15 +116,55 @@ function values(obj) {
   return results
 }
 
-function bft(nodes) {
+function dft(node) {
+  if(node.prevNodes.length > 0) {
+    var path = findLongest(node.prevNodes.map(dft))
+    path.push(node)
+    return path
+  } else {
+    return [node]
+  }
+}
+
+function findLongest(arr) {
+  var length = 0
+  var path = []
+  arr.forEach(function(p) {
+    if(p.length > length) {
+      length = p.length
+      path = p
+    }
+  })
+
+  return path
+}
+
+function bft(nodes, found) {
   if(!nodes || nodes.length === 0) return []
 
   var children = []
   nodes.forEach(function(n) {
-    children = children.concat(n.prevNodes)
+    if(found[n.id]) return
+
+    found[n.id] = n
+    children = children.concat(n.prevNodes).concat(n.nextNodes)
   })
 
-  return [nodes].concat(bft(children))
+  return bft(children, found)
+}
+
+function insertToPath(path, node) {
+  for(var i=0; i<path.length; i++) {
+    var curr = path[i]
+    if(node.prevNodes.indexOf(curr) >= 0) {
+      path.splice(i+1, 0, node)
+      return true
+    } else if(node.nextNodes.indexOf(curr) >= 0) {
+      path.splice(i, 0, node)
+      return true
+    }
+  }
+  return false
 }
 
 function dfs(start, results) {

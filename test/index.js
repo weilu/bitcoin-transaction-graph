@@ -31,52 +31,79 @@ function assertNodeIdsEqualTxIds(nodes, txids) {
   assert.deepEqual(nodes.map(function(n){ return n.id }).sort(), txids.sort())
 }
 
-function assertTxIdsSame(txs1, txs2) {
-  assert.deepEqual(getTxIds(txs1).sort(), getTxIds(txs2).sort())
-}
-
 describe('TxGraph', function() {
   var txs = []
   var graph = new TxGraph()
 
   beforeEach(function() {
-    for(var i=0; i<7; i++) {
+    for(var i=0; i<17; i++) {
       txs[i] = fakeTx(i)
     }
-    txs[0].addInput(fakeTxId(7), 0)
-    txs[1].addInput(fakeTxId(8), 0)
-    txs[2].addInput(txs[0].getId(), 0)
-    txs[2].addInput(txs[1].getId(), 1)
-    txs[3].addInput(txs[1].getId(), 0)
-    txs[4].addInput(txs[2].getId(), 0)
-    txs[4].addInput(txs[3].getId(), 1)
-    txs[6].addInput(txs[5].getId(), 0)
 
-    graph.addTx(txs[6])
-    graph.addTx(txs[5])
-    graph.addTx(txs[0])
-    graph.addTx(txs[2])
-    graph.addTx(txs[4])
-    graph.addTx(txs[3])
-    graph.addTx(txs[1])
+    txs[0].addInput(fakeTxId(13), 0)
+
+    txs[2].addInput(fakeTxId(1), 0)
+    txs[2].addInput(fakeTxId(10), 1)
+
+    txs[3].addInput(fakeTxId(2), 0)
+    txs[3].addInput(fakeTxId(5), 1)
+    txs[3].addInput(fakeTxId(7), 2)
+
+    txs[4].addInput(fakeTxId(7), 0)
+
+    txs[5].addInput(fakeTxId(6), 0)
+
+    txs[6].addInput(fakeTxId(8), 0)
+    txs[6].addInput(fakeTxId(9), 1)
+
+    txs[7].addInput(fakeTxId(6), 0)
+
+    txs[8].addInput(fakeTxId(10), 0)
+
+    txs[9].addInput(fakeTxId(10), 0)
+    txs[9].addInput(fakeTxId(12), 1)
+
+    txs[10].addInput(fakeTxId(11), 0)
+
+    txs[14].addInput(fakeTxId(2), 0)
+    txs[15].addInput(fakeTxId(14), 0)
+    txs[16].addInput(fakeTxId(14), 0)
+
+    txs.forEach(function(tx) {
+      graph.addTx(tx)
+    })
   })
 
   describe('addTx', function() {
     it('constructs the graph as expected', function() {
-      assertNodeIdsEqualTxIds(graph.heads, [fakeTxId(6), fakeTxId(4)])
-      assertNodeIdsEqualTxIds(graph.heads[0].prevNodes, [fakeTxId(5)])
-      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes, [fakeTxId(2), fakeTxId(3)])
-      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes[0].prevNodes, [fakeTxId(0), fakeTxId(1)])
-      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes[1].prevNodes, [fakeTxId(1)])
+      assertNodeIdsEqualTxIds(graph.heads, [fakeTxId(0), fakeTxId(3), fakeTxId(4), fakeTxId(15), fakeTxId(16)])
+      assertNodeIdsEqualTxIds(graph.heads[0].prevNodes, [fakeTxId(13)])
+      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes, [fakeTxId(2), fakeTxId(5), fakeTxId(7)])
+      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes[0].prevNodes, [fakeTxId(1), fakeTxId(10)])
+      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes[1].prevNodes, [fakeTxId(6)])
     })
   })
 
   describe('getInOrderTxs', function() {
     it('returns transactions in dependency order', function() {
       var orderedTxs = graph.getInOrderTxs()
-      assertTxIdsSame(orderedTxs[0], [txs[0], txs[1]])
-      assertTxIdsSame(orderedTxs[1], [txs[2], txs[3], txs[5]])
-      assertTxIdsSame(orderedTxs[2], [txs[4], txs[6]])
+      assert.equal(orderedTxs.length, txs.length)
+
+      orderedTxs.forEach(function(tx, i) {
+        var node = graph.findNodeById(tx.getId())
+
+        node.prevNodes.forEach(function(prev) {
+          if(!prev.tx) return;
+
+          assert(orderedTxs.indexOf(prev.tx) < i, "expect " + prev.tx.getId() + " to appear before " + tx.getId())
+        })
+
+        node.nextNodes.forEach(function(next) {
+          if(!next.tx) return;
+
+          assert(orderedTxs.indexOf(next.tx) > i)
+        })
+      })
     })
   })
 
@@ -90,7 +117,7 @@ describe('TxGraph', function() {
   describe('getTails', function() {
     it('returns nodes that everybody else depends on', function() {
       var tails = graph.getTails()
-      assertNodeIdsEqualTxIds(graph.getTails(), [fakeTxId(7), fakeTxId(8), fakeTxId(5)])
+      assertNodeIdsEqualTxIds(graph.getTails(), [fakeTxId(1), fakeTxId(11), fakeTxId(12), fakeTxId(13)])
     })
   })
 
@@ -116,21 +143,17 @@ describe('TxGraph', function() {
     describe('calculateFees', function() {
       it('attaches expected fees to transactions', function() {
         graph.calculateFees()
-        graph.getInOrderTxs().forEach(function(group) {
-          group.forEach(function(t) {
-            assert.equal(t.fee, txs[t.getId()].fee)
-          })
+        graph.getInOrderTxs().forEach(function(t) {
+          assert.equal(t.fee, txs[t.getId()].fee)
         })
       })
     })
 
     describe('calculateFeesAndValues', function() {
       it('attaches expected fees to transactions', function() {
-        graph.getInOrderTxs().forEach(function(group) {
-          graph.calculateFeesAndValues()
-          group.forEach(function(t) {
-            assert.equal(t.fee, txs[t.getId()].fee)
-          })
+        graph.calculateFeesAndValues()
+        graph.getInOrderTxs().forEach(function(t) {
+          assert.equal(t.fee, txs[t.getId()].fee)
         })
       })
 
