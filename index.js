@@ -166,17 +166,29 @@ function findLongest(arr) {
 }
 
 function insertToPath(path, node) {
+  var start, end
+
   for(var i=0; i<path.length; i++) {
     var curr = path[i]
     if(node.prevNodes.indexOf(curr) >= 0) {
-      path.splice(i+1, 0, node)
-      return true
+      start = i // last start should always be found before end
     } else if(node.nextNodes.indexOf(curr) >= 0) {
-      path.splice(i, 0, node)
-      return true
+      end = i
+      break // as soon as we find a next node, break out of it
     }
   }
-  return false
+
+  if(start == null && end == null) {
+    return false
+  }
+
+  if(start != null) {
+    path.splice(start + 1, 0, node)
+  } else {
+    path.splice(end, 0, node)
+  }
+
+  return true
 }
 
 function dfs(start, results) {

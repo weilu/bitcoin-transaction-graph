@@ -68,14 +68,12 @@ describe('TxGraph', function() {
     txs[14].addInput(fakeTxId(2), 0)
     txs[15].addInput(fakeTxId(14), 0)
     txs[16].addInput(fakeTxId(14), 0)
-
-    txs.forEach(function(tx) {
-      graph.addTx(tx)
-    })
   })
 
   describe('addTx', function() {
     it('constructs the graph as expected', function() {
+      txs.forEach(function(tx) { graph.addTx(tx) })
+
       assertNodeIdsEqualTxIds(graph.heads, [fakeTxId(0), fakeTxId(3), fakeTxId(4), fakeTxId(15), fakeTxId(16)])
       assertNodeIdsEqualTxIds(graph.heads[0].prevNodes, [fakeTxId(13)])
       assertNodeIdsEqualTxIds(graph.heads[1].prevNodes, [fakeTxId(2), fakeTxId(5), fakeTxId(7)])
@@ -86,9 +84,24 @@ describe('TxGraph', function() {
 
   describe('getInOrderTxs', function() {
     it('returns transactions in dependency order', function() {
+      txs.forEach(function(tx) { graph.addTx(tx) })
+
       var orderedTxs = graph.getInOrderTxs()
       assert.equal(orderedTxs.length, txs.length)
 
+      assertDependenciesPreserved(orderedTxs)
+    })
+
+    it('works when transactions are added in a different order', function() {
+      txs.reverse().forEach(function(tx) { graph.addTx(tx) })
+
+      var orderedTxs = graph.getInOrderTxs()
+      assert.equal(orderedTxs.length, txs.length)
+
+      assertDependenciesPreserved(orderedTxs)
+    })
+
+    function assertDependenciesPreserved(orderedTxs) {
       orderedTxs.forEach(function(tx, i) {
         var node = graph.findNodeById(tx.getId())
 
@@ -99,16 +112,16 @@ describe('TxGraph', function() {
         })
 
         node.nextNodes.forEach(function(next) {
-          if(!next.tx) return;
-
           assert(orderedTxs.indexOf(next.tx) > i)
         })
       })
-    })
+    }
   })
 
   describe('findNodeById', function() {
     it('returns the tx', function() {
+      txs.forEach(function(tx) { graph.addTx(tx) })
+
       var id = fakeTxId(5)
       assert.equal(graph.findNodeById(id).id, id)
     })
@@ -116,6 +129,8 @@ describe('TxGraph', function() {
 
   describe('getTails', function() {
     it('returns nodes that everybody else depends on', function() {
+      txs.forEach(function(tx) { graph.addTx(tx) })
+
       var tails = graph.getTails()
       assertNodeIdsEqualTxIds(graph.getTails(), [fakeTxId(1), fakeTxId(11), fakeTxId(12), fakeTxId(13)])
     })
