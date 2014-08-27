@@ -108,12 +108,38 @@ TxGraph.prototype.calculateFeesAndValues = function(addresses, network) {
   })
 }
 
-function values(obj) {
-  var results = []
-  for(var k in obj) {
-    results.push(obj[k])
-  }
-  return results
+function findNodeById(txid, nodes) {
+  if(!nodes || nodes.length === 0) return
+
+  var result
+  nodes.some(function(node) {
+    var found = node.id === txid
+    if(found) { result = node }
+    return found
+  })
+
+  if(result) return result
+
+  var children = []
+  nodes.forEach(function(n) {
+    children = children.concat(n.prevNodes)
+  })
+
+  return findNodeById(txid, children)
+}
+
+function bft(nodes, found) {
+  if(!nodes || nodes.length === 0) return []
+
+  var children = []
+  nodes.forEach(function(n) {
+    if(found[n.id]) return
+
+    found[n.id] = n
+    children = children.concat(n.prevNodes).concat(n.nextNodes)
+  })
+
+  return bft(children, found)
 }
 
 function dft(node) {
@@ -137,20 +163,6 @@ function findLongest(arr) {
   })
 
   return path
-}
-
-function bft(nodes, found) {
-  if(!nodes || nodes.length === 0) return []
-
-  var children = []
-  nodes.forEach(function(n) {
-    if(found[n.id]) return
-
-    found[n.id] = n
-    children = children.concat(n.prevNodes).concat(n.nextNodes)
-  })
-
-  return bft(children, found)
 }
 
 function insertToPath(path, node) {
@@ -177,24 +189,12 @@ function dfs(start, results) {
   }
 }
 
-function findNodeById(txid, nodes) {
-  if(!nodes || nodes.length === 0) return
-
-  var result
-  nodes.some(function(node) {
-    var found = node.id === txid
-    if(found) { result = node }
-    return found
-  })
-
-  if(result) return result
-
-  var children = []
-  nodes.forEach(function(n) {
-    children = children.concat(n.prevNodes)
-  })
-
-  return findNodeById(txid, children)
+function values(obj) {
+  var results = []
+  for(var k in obj) {
+    results.push(obj[k])
+  }
+  return results
 }
 
 function assertEmptyNodes(nodes) {
