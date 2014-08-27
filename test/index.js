@@ -101,6 +101,17 @@ describe('TxGraph', function() {
       assertDependenciesPreserved(orderedTxs)
     })
 
+    it('works when transactions are added in a random order', function() {
+      txs.sort(function() {
+        return .5 - Math.random();
+      }).forEach(function(tx) { graph.addTx(tx) })
+
+      var orderedTxs = graph.getInOrderTxs()
+      assert.equal(orderedTxs.length, txs.length)
+
+      assertDependenciesPreserved(orderedTxs)
+    })
+
     function assertDependenciesPreserved(orderedTxs) {
       orderedTxs.forEach(function(tx, i) {
         var node = graph.findNodeById(tx.getId())
