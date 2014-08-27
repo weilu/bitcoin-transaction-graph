@@ -80,11 +80,10 @@ describe('TxGraph', function() {
     })
   })
 
-  describe('findTxById', function() {
+  describe('findNodeById', function() {
     it('returns the tx', function() {
       var id = fakeTxId(5)
-      var tx = graph.findTxById(id)
-      assert.equal(tx.getId(), id)
+      assert.equal(graph.findNodeById(id).id, id)
     })
   })
 
@@ -139,8 +138,8 @@ describe('TxGraph', function() {
         it('my address is one of the inputs', function() {
           var input = tx.ins[0]
           graph.calculateFeesAndValues(input.address, testnet)
-          assert.equal(graph.findTxById(tx.txid).value, input.value)
-          assert.equal(graph.findTxById(input.prevTx.txid).value, input.prevTx.ins[0].prevTx.value)
+          assert.equal(graph.findNodeById(tx.txid).tx.value, input.value)
+          assert.equal(graph.findNodeById(input.prevTx.txid).tx.value, input.prevTx.ins[0].prevTx.value)
         })
 
         it('all inputs are my addresses', function() {
@@ -148,11 +147,11 @@ describe('TxGraph', function() {
             return input.address
           }), testnet)
 
-          assert.equal(graph.findTxById(tx.txid).value, tx.ins.reduce(function(memo, input) {
+          assert.equal(graph.findNodeById(tx.txid).tx.value, tx.ins.reduce(function(memo, input) {
             return input.value + memo
           }, 0))
           tx.ins.forEach(function(input) {
-            assert.equal(graph.findTxById(input.prevTx.txid).value, input.prevTx.ins[0].prevTx.value)
+            assert.equal(graph.findNodeById(input.prevTx.txid).tx.value, input.prevTx.ins[0].prevTx.value)
           })
         })
 
@@ -162,8 +161,8 @@ describe('TxGraph', function() {
 
           graph.calculateFeesAndValues([ input.address, output.address ], testnet)
 
-          assert.equal(graph.findTxById(tx.txid).value, input.value + output.value)
-          assert.equal(graph.findTxById(input.prevTx.txid).value, input.prevTx.ins[0].prevTx.value)
+          assert.equal(graph.findNodeById(tx.txid).tx.value, input.value + output.value)
+          assert.equal(graph.findNodeById(input.prevTx.txid).tx.value, input.prevTx.ins[0].prevTx.value)
         })
 
         it('all inputs are my addresses, plus the first output', function() {
@@ -177,10 +176,10 @@ describe('TxGraph', function() {
           var expectedValue = tx.ins.reduce(function(memo, input) {
             return input.value + memo
           }, 0) + output.value
-          assert.equal(graph.findTxById(tx.txid).value, expectedValue)
+          assert.equal(graph.findNodeById(tx.txid).tx.value, expectedValue)
 
           tx.ins.forEach(function(input) {
-            assert.equal(graph.findTxById(input.prevTx.txid).value, input.prevTx.ins[0].prevTx.value)
+            assert.equal(graph.findNodeById(input.prevTx.txid).tx.value, input.prevTx.ins[0].prevTx.value)
           })
         })
       })

@@ -46,8 +46,8 @@ TxGraph.prototype.getInOrderTxs = function() {
   return results
 }
 
-TxGraph.prototype.findTxById = function(id) {
-  return findNodeById(id, this.heads).tx
+TxGraph.prototype.findNodeById = function(id) {
+  return findNodeById(id, this.heads)
 }
 
 TxGraph.prototype.getTails = function() {
