@@ -1,31 +1,10 @@
 var assert = require('assert')
-var sinon = require('sinon')
 var Transaction = require('bitcoinjs-lib').Transaction
 var testnet = require('bitcoinjs-lib').networks.testnet
 var TxGraph = require('../index')
 var fixtures = require('./fixtures')
-
-function fakeTxHash(i) {
-  var hash = new Buffer(32)
-  hash.fill(i)
-  return hash
-}
-
-function fakeTxId(i) {
-  var hash = fakeTxHash(i)
-  Array.prototype.reverse.call(hash)
-  return hash.toString('hex')
-}
-
-function fakeTx(i) {
-  var tx = new Transaction()
-  sinon.stub(tx, "getId").returns(fakeTxId(i))
-  return tx
-}
-
-function getTxIds(txs) {
-  return txs.map(function(tx){ return tx.getId()})
-}
+var buildTxs = require('./helper').buildTxs
+var fakeTxId = require('./helper').fakeTxId
 
 function assertNodeIdsEqualTxIds(nodes, txids) {
   assert.deepEqual(nodes.map(function(n){ return n.id }).sort(), txids.sort())
@@ -36,38 +15,7 @@ describe('TxGraph', function() {
   var graph = new TxGraph()
 
   beforeEach(function() {
-    for(var i=0; i<17; i++) {
-      txs[i] = fakeTx(i)
-    }
-
-    txs[0].addInput(fakeTxId(13), 0)
-
-    txs[2].addInput(fakeTxId(1), 0)
-    txs[2].addInput(fakeTxId(10), 1)
-
-    txs[3].addInput(fakeTxId(2), 0)
-    txs[3].addInput(fakeTxId(5), 1)
-    txs[3].addInput(fakeTxId(7), 2)
-
-    txs[4].addInput(fakeTxId(7), 0)
-
-    txs[5].addInput(fakeTxId(6), 0)
-
-    txs[6].addInput(fakeTxId(8), 0)
-    txs[6].addInput(fakeTxId(9), 1)
-
-    txs[7].addInput(fakeTxId(6), 0)
-
-    txs[8].addInput(fakeTxId(10), 0)
-
-    txs[9].addInput(fakeTxId(10), 0)
-    txs[9].addInput(fakeTxId(12), 1)
-
-    txs[10].addInput(fakeTxId(11), 0)
-
-    txs[14].addInput(fakeTxId(2), 0)
-    txs[15].addInput(fakeTxId(14), 0)
-    txs[16].addInput(fakeTxId(14), 0)
+    txs = buildTxs()
   })
 
   describe('addTx', function() {
