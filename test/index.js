@@ -82,51 +82,16 @@ describe('TxGraph', function() {
     })
   })
 
-  describe('getInOrderTxs', function() {
-    it('returns transactions in dependency order', function() {
+  describe('getAllNodes', function() {
+    it('returns all the nodes in the graph', function() {
       txs.forEach(function(tx) { graph.addTx(tx) })
 
-      var orderedTxs = graph.getInOrderTxs()
-      assert.equal(orderedTxs.length, txs.length)
-
-      assertDependenciesPreserved(orderedTxs)
+      var allNodes = graph.getAllNodes()
+      assert.equal(allNodes.length, txs.length)
+      assertNodeIdsEqualTxIds(allNodes, txs.map(function(tx) {
+        return tx.getId()
+      }))
     })
-
-    it('works when transactions are added in a different order', function() {
-      txs.reverse().forEach(function(tx) { graph.addTx(tx) })
-
-      var orderedTxs = graph.getInOrderTxs()
-      assert.equal(orderedTxs.length, txs.length)
-
-      assertDependenciesPreserved(orderedTxs)
-    })
-
-    it('works when transactions are added in a random order', function() {
-      txs.sort(function() {
-        return .5 - Math.random();
-      }).forEach(function(tx) { graph.addTx(tx) })
-
-      var orderedTxs = graph.getInOrderTxs()
-      assert.equal(orderedTxs.length, txs.length)
-
-      assertDependenciesPreserved(orderedTxs)
-    })
-
-    function assertDependenciesPreserved(orderedTxs) {
-      orderedTxs.forEach(function(tx, i) {
-        var node = graph.findNodeById(tx.getId())
-
-        node.prevNodes.forEach(function(prev) {
-          if(!prev.tx) return;
-
-          assert(orderedTxs.indexOf(prev.tx) < i, "expect " + prev.tx.getId() + " to appear before " + tx.getId())
-        })
-
-        node.nextNodes.forEach(function(next) {
-          assert(orderedTxs.indexOf(next.tx) > i)
-        })
-      })
-    }
   })
 
   describe('findNodeById', function() {
@@ -169,8 +134,9 @@ describe('TxGraph', function() {
     describe('calculateFees', function() {
       it('attaches expected fees to transactions', function() {
         graph.calculateFees()
-        graph.getInOrderTxs().forEach(function(t) {
-          assert.equal(t.fee, txs[t.getId()].fee)
+        graph.getAllNodes().forEach(function(n) {
+          if(n.tx == null) return;
+          assert.equal(n.tx.fee, txs[n.id].fee)
         })
       })
     })
@@ -178,8 +144,9 @@ describe('TxGraph', function() {
     describe('calculateFeesAndValues', function() {
       it('attaches expected fees to transactions', function() {
         graph.calculateFeesAndValues()
-        graph.getInOrderTxs().forEach(function(t) {
-          assert.equal(t.fee, txs[t.getId()].fee)
+        graph.getAllNodes().forEach(function(n) {
+          if(n.tx == null) return;
+          assert.equal(n.tx.fee, txs[n.id].fee)
         })
       })
 

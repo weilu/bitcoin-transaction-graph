@@ -30,47 +30,10 @@ TxGraph.prototype.addTx = function(tx) {
   }, this)
 }
 
-TxGraph.prototype.getInOrderTxs = function() {
-  var components = []
-  this.heads.forEach(function(head) {
-    var exist = components.some(function(component) {
-      return component.nodes[head.id]
-    })
-    if(exist) return
-
-    var found = {}
-    bft([head], found)
-    components.push({head: head, nodes: found})
-  })
-
-  var results = []
-  components.forEach(function(component) {
-    var nodes = component.nodes
-    var path = dft(component.head)
-    path.forEach(function(n) {
-      delete nodes[n.id]
-    })
-
-    var changed = 1
-    while(changed) {
-      changed = 0
-      for(var id in nodes) {
-        var node = nodes[id]
-        if(insertToPath(path, node)) {
-          delete nodes[node.id]
-          changed++
-        }
-      }
-    }
-
-    results = results.concat(path)
-  })
-
-  return results.filter(function(node) {
-    return node.tx != null
-  }).map(function(node) {
-    return node.tx
-  })
+TxGraph.prototype.getAllNodes = function() {
+  var found = {}
+  bft(this.heads, found)
+  return values(found)
 }
 
 TxGraph.prototype.findNodeById = function(id) {
@@ -140,55 +103,6 @@ function bft(nodes, found) {
   })
 
   return bft(children, found)
-}
-
-function dft(node) {
-  if(node.prevNodes.length > 0) {
-    var path = findLongest(node.prevNodes.map(dft))
-    path.push(node)
-    return path
-  } else {
-    return [node]
-  }
-}
-
-function findLongest(arr) {
-  var length = 0
-  var path = []
-  arr.forEach(function(p) {
-    if(p.length > length) {
-      length = p.length
-      path = p
-    }
-  })
-
-  return path
-}
-
-function insertToPath(path, node) {
-  var start, end
-
-  for(var i=0; i<path.length; i++) {
-    var curr = path[i]
-    if(node.prevNodes.indexOf(curr) >= 0) {
-      start = i // last start should always be found before end
-    } else if(node.nextNodes.indexOf(curr) >= 0) {
-      end = i
-      break // as soon as we find a next node, break out of it
-    }
-  }
-
-  if(start == null && end == null) {
-    return false
-  }
-
-  if(start != null) {
-    path.splice(start + 1, 0, node)
-  } else {
-    path.splice(end, 0, node)
-  }
-
-  return true
 }
 
 function dfs(start, results) {
