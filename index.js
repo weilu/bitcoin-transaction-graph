@@ -40,10 +40,20 @@ TxGraph.prototype.findNodeById = function(id) {
   return findNodeById(id, this.heads)
 }
 
+TxGraph.prototype.compareNodes = function(a, b) {
+  if(dfs(a, b)) {
+    return 1
+  } else if(dfs(b, a)) {
+    return -1
+  } else {
+    return 0
+  }
+}
+
 TxGraph.prototype.getTails = function() {
   var results = {}
   this.heads.forEach(function(head) {
-    dfs(head, results)
+    findPrevLeaves(head, results)
   })
   return values(results)
 }
@@ -91,6 +101,14 @@ function findNodeById(txid, nodes) {
   return findNodeById(txid, children)
 }
 
+function values(obj) {
+  var results = []
+  for(var k in obj) {
+    results.push(obj[k])
+  }
+  return results
+}
+
 function bft(nodes, found) {
   if(!nodes || nodes.length === 0) return []
 
@@ -105,22 +123,26 @@ function bft(nodes, found) {
   return bft(children, found)
 }
 
-function dfs(start, results) {
+function dfs(start, target) {
+  if(start === target) return true;
+
+  if(start.prevNodes && start.prevNodes.length > 0) {
+    return start.prevNodes.some(function(node) {
+      return dfs(node, target)
+    })
+  }
+
+  return false
+}
+
+function findPrevLeaves(start, results) {
   if(start.prevNodes.length > 0) {
     start.prevNodes.forEach(function(node) {
-      dfs(node, results)
+      findPrevLeaves(node, results)
     })
   } else {
     results[start.id] = start
   }
-}
-
-function values(obj) {
-  var results = []
-  for(var k in obj) {
-    results.push(obj[k])
-  }
-  return results
 }
 
 function assertEmptyNodes(nodes) {

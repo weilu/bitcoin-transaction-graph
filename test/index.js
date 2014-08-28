@@ -51,6 +51,38 @@ describe('TxGraph', function() {
     })
   })
 
+  describe('compareNodes', function() {
+    it('returns -1 when a is a direct dependency of b', function() {
+      txs.forEach(function(tx) { graph.addTx(tx) })
+      assert.equal(graph.compareNodes(getNode(2), getNode(3)), -1)
+    })
+
+    it('returns -1 when a is a indirect dependency of b', function() {
+      txs.forEach(function(tx) { graph.addTx(tx) })
+      assert.equal(graph.compareNodes(getNode(6), getNode(4)), -1)
+    })
+
+    it('returns 1 when b is a direct dependency of a', function() {
+      txs.forEach(function(tx) { graph.addTx(tx) })
+      assert.equal(graph.compareNodes(getNode(3), getNode(2)), 1)
+    })
+
+    it('returns 1 when b is a indirect dependency of a', function() {
+      txs.forEach(function(tx) { graph.addTx(tx) })
+      assert.equal(graph.compareNodes(getNode(4), getNode(6)), 1)
+    })
+
+    it('returns 0 when a and b does not depend on each other', function() {
+      txs.forEach(function(tx) { graph.addTx(tx) })
+      assert.equal(graph.compareNodes(getNode(3), getNode(4)), 0)
+      assert.equal(graph.compareNodes(getNode(0), getNode(2)), 0)
+    })
+
+    function getNode(i) {
+      return graph.findNodeById(fakeTxId(i))
+    }
+  })
+
   describe('getTails', function() {
     it('returns nodes that everybody else depends on', function() {
       txs.forEach(function(tx) { graph.addTx(tx) })
