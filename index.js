@@ -9,7 +9,7 @@ function TxGraph() {
 
 TxGraph.prototype.addTx = function(tx) {
   var node = findNodeById(tx.getId(), this.heads) || new Node(tx.getId())
-  if(node.nextNodes.length === 0) {
+  if(node.nextNodes.length === 0 && this.heads.indexOf(node) < 0) {
     this.heads.push(node)
   }
   node.tx = tx

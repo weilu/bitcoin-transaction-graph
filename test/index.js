@@ -28,6 +28,13 @@ describe('TxGraph', function() {
       assertNodeIdsEqualTxIds(graph.heads[1].prevNodes[0].prevNodes, [fakeTxId(1), fakeTxId(10)])
       assertNodeIdsEqualTxIds(graph.heads[1].prevNodes[1].prevNodes, [fakeTxId(6)])
     })
+
+    it('does not double add head', function() {
+      txs.forEach(function(tx) { graph.addTx(tx) })
+      graph.addTx(txs[0])
+
+      assertNodeIdsEqualTxIds(graph.heads, [fakeTxId(0), fakeTxId(3), fakeTxId(4), fakeTxId(15), fakeTxId(16)])
+    })
   })
 
   describe('getAllNodes', function() {
