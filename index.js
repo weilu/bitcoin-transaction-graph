@@ -19,14 +19,22 @@ TxGraph.prototype.addTx = function(tx) {
     Array.prototype.reverse.call(txinId)
     txinId = txinId.toString('hex')
 
-    return findNodeById(txinId, this.heads) || new Node(txinId)
+    var prevNode = findNodeById(txinId, this.heads) || new Node(txinId)
+    return { prevNode: prevNode, prevOutIndex: txIn.index }
   }, this)
 
-  prevNodes.forEach(function(n) {
-    var i = this.heads.indexOf(n)
-    if(i >= 0) this.heads.splice(i, 1)
+  prevNodes.forEach(function(pair) {
+    var n = pair.prevNode
+    var index = pair.prevOutIndex
 
-    n.addToNextNodes(node)
+    var i = this.heads.indexOf(n)
+    if(i >= 0) this.heads.splice(i, 1);
+
+    n.nextNodes[index] = node
+
+    if(node.prevNodes.indexOf(n) < 0) {
+      node.prevNodes.push(n)
+    }
   }, this)
 }
 

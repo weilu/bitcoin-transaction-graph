@@ -7,6 +7,10 @@ var buildTxs = require('./helper').buildTxs
 var fakeTxId = require('./helper').fakeTxId
 
 function assertNodeIdsEqualTxIds(nodes, txids) {
+  assert.deepEqual(nodes.map(function(n){ return n.id }), txids)
+}
+
+function assertNodeIdsEqualTxIdsIgnoreOrder(nodes, txids) {
   assert.deepEqual(nodes.map(function(n){ return n.id }).sort(), txids.sort())
 }
 
@@ -23,10 +27,30 @@ describe('TxGraph', function() {
       txs.forEach(function(tx) { graph.addTx(tx) })
 
       assertNodeIdsEqualTxIds(graph.heads, [fakeTxId(0), fakeTxId(3), fakeTxId(4), fakeTxId(15), fakeTxId(16)])
-      assertNodeIdsEqualTxIds(graph.heads[0].prevNodes, [fakeTxId(13)])
-      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes, [fakeTxId(2), fakeTxId(5), fakeTxId(7)])
-      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes[0].prevNodes, [fakeTxId(1), fakeTxId(10)])
-      assertNodeIdsEqualTxIds(graph.heads[1].prevNodes[1].prevNodes, [fakeTxId(6)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(graph.heads[0].prevNodes, [fakeTxId(13)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(graph.heads[1].prevNodes, [fakeTxId(2), fakeTxId(5), fakeTxId(7)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(graph.heads[1].prevNodes[0].prevNodes, [fakeTxId(1), fakeTxId(10)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(graph.heads[1].prevNodes[1].prevNodes, [fakeTxId(6)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(graph.heads[1].prevNodes[2].prevNodes, [fakeTxId(6)])
+    })
+
+    it('orders the nextNodes according to output indexes', function() {
+      txs.forEach(function(tx) { graph.addTx(tx) })
+
+      var tx14node = graph.heads[3].prevNodes[0]
+      assertNodeIdsEqualTxIds(tx14node.nextNodes, [fakeTxId(15), fakeTxId(16)])
+
+      var tx2node = tx14node.prevNodes[0]
+      assertNodeIdsEqualTxIds(tx2node.nextNodes, [fakeTxId(14), fakeTxId(3)])
+
+      var tx7node = graph.heads[2].prevNodes[0]
+      assertNodeIdsEqualTxIds(tx7node.nextNodes, [fakeTxId(3), fakeTxId(4)])
+
+      var tx6node = tx7node.prevNodes[0]
+      assertNodeIdsEqualTxIds(tx6node.nextNodes, [fakeTxId(5), fakeTxId(7)])
+
+      var tx10node = tx2node.prevNodes[1]
+      assertNodeIdsEqualTxIds(tx10node.nextNodes, [fakeTxId(2), fakeTxId(8), fakeTxId(9)])
     })
 
     it('does not double add head', function() {
@@ -43,7 +67,7 @@ describe('TxGraph', function() {
 
       var allNodes = graph.getAllNodes()
       assert.equal(allNodes.length, txs.length)
-      assertNodeIdsEqualTxIds(allNodes, txs.map(function(tx) {
+      assertNodeIdsEqualTxIdsIgnoreOrder(allNodes, txs.map(function(tx) {
         return tx.getId()
       }))
     })
@@ -95,7 +119,7 @@ describe('TxGraph', function() {
       txs.forEach(function(tx) { graph.addTx(tx) })
 
       var tails = graph.getTails()
-      assertNodeIdsEqualTxIds(graph.getTails(), [fakeTxId(1), fakeTxId(11), fakeTxId(12), fakeTxId(13)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(graph.getTails(), [fakeTxId(1), fakeTxId(11), fakeTxId(12), fakeTxId(13)])
     })
   })
 
