@@ -143,42 +143,42 @@ describe('TxGraph', function() {
     })
 
     describe('calculateFees', function() {
-      it('attaches expected fees to transactions', function() {
-        graph.calculateFees()
+      it('returns a hash of tx ids to fees', function() {
+        var fees = graph.calculateFees()
         graph.getAllNodes().forEach(function(n) {
           if(n.tx == null) return;
-          assert.equal(n.tx.fee, txs[n.id].fee)
+          assert.equal(fees[n.id].fee, txs[n.id].fee)
         })
       })
     })
 
     describe('calculateFeesAndValues', function() {
-      it('attaches expected fees to transactions', function() {
-        graph.calculateFeesAndValues()
+      it('returns the expected fees', function() {
+        var feesAndValues = graph.calculateFeesAndValues()
         graph.getAllNodes().forEach(function(n) {
           if(n.tx == null) return;
-          assert.equal(n.tx.fee, txs[n.id].fee)
+          assert.equal(feesAndValues[n.id].fee, txs[n.id].fee)
         })
       })
 
       describe('values', function() {
         it('my address is one of the inputs', function() {
           var input = tx.ins[0]
-          graph.calculateFeesAndValues(input.address, testnet)
-          assert.equal(graph.findNodeById(tx.txid).tx.value, input.value)
-          assert.equal(graph.findNodeById(input.prevTx.txid).tx.value, input.prevTx.ins[0].prevTx.value)
+          var feesAndValues = graph.calculateFeesAndValues(input.address, testnet)
+          assert.equal(feesAndValues[tx.txid].value, input.value)
+          assert.equal(feesAndValues[input.prevTx.txid].value, input.prevTx.ins[0].prevTx.value)
         })
 
         it('all inputs are my addresses', function() {
-          graph.calculateFeesAndValues(tx.ins.map(function(input) {
+          var feesAndValues = graph.calculateFeesAndValues(tx.ins.map(function(input) {
             return input.address
           }), testnet)
 
-          assert.equal(graph.findNodeById(tx.txid).tx.value, tx.ins.reduce(function(memo, input) {
+          assert.equal(feesAndValues[tx.txid].value, tx.ins.reduce(function(memo, input) {
             return input.value + memo
           }, 0))
           tx.ins.forEach(function(input) {
-            assert.equal(graph.findNodeById(input.prevTx.txid).tx.value, input.prevTx.ins[0].prevTx.value)
+            assert.equal(feesAndValues[input.prevTx.txid].value, input.prevTx.ins[0].prevTx.value)
           })
         })
 
@@ -186,10 +186,10 @@ describe('TxGraph', function() {
           var input = tx.ins[0]
           var output = tx.outs[0]
 
-          graph.calculateFeesAndValues([ input.address, output.address ], testnet)
+          var feesAndValues = graph.calculateFeesAndValues([ input.address, output.address ], testnet)
 
-          assert.equal(graph.findNodeById(tx.txid).tx.value, input.value + output.value)
-          assert.equal(graph.findNodeById(input.prevTx.txid).tx.value, input.prevTx.ins[0].prevTx.value)
+          assert.equal(feesAndValues[tx.txid].value, input.value + output.value)
+          assert.equal(feesAndValues[input.prevTx.txid].value, input.prevTx.ins[0].prevTx.value)
         })
 
         it('all inputs are my addresses, plus the first output', function() {
@@ -198,15 +198,15 @@ describe('TxGraph', function() {
             return input.address
           }).concat(output.address)
 
-          graph.calculateFeesAndValues(addresses, testnet)
+          var feesAndValues = graph.calculateFeesAndValues(addresses, testnet)
 
           var expectedValue = tx.ins.reduce(function(memo, input) {
             return input.value + memo
           }, 0) + output.value
-          assert.equal(graph.findNodeById(tx.txid).tx.value, expectedValue)
+          assert.equal(feesAndValues[tx.txid].value, expectedValue)
 
           tx.ins.forEach(function(input) {
-            assert.equal(graph.findNodeById(input.prevTx.txid).tx.value, input.prevTx.ins[0].prevTx.value)
+            assert.equal(feesAndValues[input.prevTx.txid].value, input.prevTx.ins[0].prevTx.value)
           })
         })
       })

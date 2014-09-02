@@ -67,7 +67,7 @@ TxGraph.prototype.getTails = function() {
 }
 
 TxGraph.prototype.calculateFees = function() {
-  this.calculateFeesAndValues()
+  return this.calculateFeesAndValues()
 }
 
 TxGraph.prototype.calculateFeesAndValues = function(addresses, network) {
@@ -84,9 +84,12 @@ TxGraph.prototype.calculateFeesAndValues = function(addresses, network) {
   }, [])
   assertNoneFundingNodes(tailsNext, addresses, network)
 
+  var results = {}
   this.heads.forEach(function(node) {
-    calculateFeesAndValuesForPath(node, addresses, network)
+    calculateFeesAndValuesForPath(node, addresses, network, results)
   })
+
+  return results
 }
 
 function findNodeById(txid, nodes) {
@@ -173,15 +176,13 @@ function assertNoneFundingNodes(nodes, addresses, network) {
 
 }
 
-function calculateFeesAndValuesForPath(node, addresses, network) {
+function calculateFeesAndValuesForPath(node, addresses, network, results) {
   if(node.prevNodes.length === 0) return;
 
-  var feeAndValue = calculateFeeAndValue(node, addresses, network)
-  node.tx.fee = feeAndValue.fee
-  node.tx.value = feeAndValue.value
+  results[node.id] = calculateFeeAndValue(node, addresses, network)
 
   node.prevNodes.forEach(function(n) {
-    calculateFeesAndValuesForPath(n, addresses, network)
+    calculateFeesAndValuesForPath(n, addresses, network, results)
   })
 }
 
