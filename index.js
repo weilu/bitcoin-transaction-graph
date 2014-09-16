@@ -67,8 +67,14 @@ TxGraph.prototype.getTails = function() {
 }
 
 TxGraph.prototype.calculateFee = function(tx) {
-  var node = this.findNodeById(tx.getId())
-  return calculateFeeAndValue(node).fee
+  var prevNodes = tx.ins.map(function(input) {
+    var buffer = new Buffer(input.hash)
+    Array.prototype.reverse.call(buffer)
+    var inputTxId = buffer.toString('hex')
+
+    return this.findNodeById(inputTxId)
+  }, this)
+  return calculateFeeAndValue(tx, prevNodes).fee
 }
 
 TxGraph.prototype.calculateFees = function() {
@@ -184,22 +190,20 @@ function assertNoneFundingNodes(nodes, addresses, network) {
 function calculateFeesAndValuesForPath(node, addresses, network, results) {
   if(node.prevNodes.length === 0) return;
 
-  results[node.id] = calculateFeeAndValue(node, addresses, network)
+  results[node.id] = calculateFeeAndValue(node.tx, node.prevNodes, addresses, network)
 
   node.prevNodes.forEach(function(n) {
     calculateFeesAndValuesForPath(n, addresses, network, results)
   })
 }
 
-function calculateFeeAndValue(node, addresses, network) {
-  var tx = node.tx
-
+function calculateFeeAndValue(tx, prevNodes, addresses, network) {
   var inputFeeAndValue = tx.ins.reduce(function(memo, input) {
     var buffer = new Buffer(input.hash)
     Array.prototype.reverse.call(buffer)
     var inputTxId = buffer.toString('hex')
 
-    var prevNode = node.prevNodes.filter(function(node) {
+    var prevNode = prevNodes.filter(function(node) {
       return node.id === inputTxId
     })[0]
 

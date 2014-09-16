@@ -146,6 +146,13 @@ describe('TxGraph', function() {
       it('returns the expected fee of a transaction', function() {
         assert.equal(graph.calculateFee(txObj), 10000)
       })
+
+      it('is able to calculate fee for a tx that is not in the graph', function() {
+        var t = new Transaction()
+        t.addInput(txObj, 0)
+        t.addOutput('mzutX1jQomSy7vPBuxCq1UaHFHJxPmNC6E', 600000)
+        assert.equal(graph.calculateFee(t), 400000)
+      })
     })
 
     describe('calculateFees', function() {
