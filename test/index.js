@@ -142,6 +142,12 @@ describe('TxGraph', function() {
       })
     })
 
+    describe('calculateFee', function() {
+      it('returns the expected fee of a transaction', function() {
+        assert.equal(graph.calculateFee(txObj), 10000)
+      })
+    })
+
     describe('calculateFees', function() {
       it('returns a hash of tx ids to fees', function() {
         var fees = graph.calculateFees()

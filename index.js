@@ -66,6 +66,11 @@ TxGraph.prototype.getTails = function() {
   return values(results)
 }
 
+TxGraph.prototype.calculateFee = function(tx) {
+  var node = this.findNodeById(tx.getId())
+  return calculateFeeAndValue(node).fee
+}
+
 TxGraph.prototype.calculateFees = function() {
   return this.calculateFeesAndValues()
 }
@@ -205,10 +210,8 @@ function calculateFeeAndValue(node, addresses, network) {
     var output = prevNode.tx.outs[input.index]
     memo.fee = memo.fee + output.value
 
-    var toAddress = Address.fromOutputScript(output.script, network).toString()
-    if(addresses.indexOf(toAddress) >= 0) {
-      memo.value = memo.value + output.value
-    }
+    var value = getOutputValue(output, addresses, network)
+    if(value) memo.value += value
 
     return memo
   }, {fee: 0, value: 0})
@@ -218,10 +221,8 @@ function calculateFeeAndValue(node, addresses, network) {
   var outputFeeAndValue = tx.outs.reduce(function(memo, output) {
     memo.fee = memo.fee + output.value
 
-    var toAddress = Address.fromOutputScript(output.script, network).toString()
-    if(addresses.indexOf(toAddress) >= 0) {
-      memo.value = memo.value + output.value
-    }
+    var value = getOutputValue(output, addresses, network)
+    if(value) memo.value += value
 
     return memo
   }, {fee: 0, value: 0})
@@ -229,6 +230,15 @@ function calculateFeeAndValue(node, addresses, network) {
   return {
     fee: inputFeeAndValue.fee - outputFeeAndValue.fee,
     value: outputFeeAndValue.value - inputFeeAndValue.value
+  }
+
+  function getOutputValue(output, addresses, network) {
+    if(!addresses) return;
+
+    var toAddress = Address.fromOutputScript(output.script, network).toString()
+    if(addresses.indexOf(toAddress) >= 0) {
+      return output.value
+    }
   }
 }
 
