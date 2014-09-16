@@ -79,10 +79,6 @@ TxGraph.prototype.calculateFee = function(tx) {
   return calculateFeeAndValue(tx, prevNodes).fee
 }
 
-TxGraph.prototype.calculateFees = function() {
-  return this.calculateFeesAndValues()
-}
-
 TxGraph.prototype.calculateFeesAndValues = function(addresses, network) {
   addresses = addresses || []
   if(!Array.isArray(addresses)) addresses = [addresses]

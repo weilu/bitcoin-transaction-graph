@@ -164,16 +164,6 @@ describe('TxGraph', function() {
       })
     })
 
-    describe('calculateFees', function() {
-      it('returns a hash of tx ids to fees', function() {
-        var fees = graph.calculateFees()
-        graph.getAllNodes().forEach(function(n) {
-          if(n.tx == null) return;
-          assert.equal(fees[n.id].fee, txs[n.id].fee)
-        })
-      })
-    })
-
     describe('calculateFeesAndValues', function() {
       it('returns the expected fees', function() {
         var feesAndValues = graph.calculateFeesAndValues()
