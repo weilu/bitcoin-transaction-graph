@@ -153,6 +153,15 @@ describe('TxGraph', function() {
         t.addOutput('mzutX1jQomSy7vPBuxCq1UaHFHJxPmNC6E', 600000)
         assert.equal(graph.calculateFee(t), 400000)
       })
+
+      it('throws an error when any of the transaction input is not found in the graph', function() {
+        assert.throws(function() {
+          var tx = new Transaction()
+          tx.addInput(new Transaction(), 0)
+          var fee = graph.calculateFee(tx)
+          console.log(fee)
+        }, /Transaction input not found in graph/)
+      })
     })
 
     describe('calculateFees', function() {

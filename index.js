@@ -71,8 +71,10 @@ TxGraph.prototype.calculateFee = function(tx) {
     var buffer = new Buffer(input.hash)
     Array.prototype.reverse.call(buffer)
     var inputTxId = buffer.toString('hex')
+    var node = this.findNodeById(inputTxId)
+    assert(node && node.tx, 'Transaction input not found in graph: ' + inputTxId)
 
-    return this.findNodeById(inputTxId)
+    return node
   }, this)
   return calculateFeeAndValue(tx, prevNodes).fee
 }
