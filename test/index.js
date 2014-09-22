@@ -51,6 +51,9 @@ describe('TxGraph', function() {
 
       var tx10node = tx2node.prevNodes[1]
       assertNodeIdsEqualTxIds(tx10node.nextNodes, [fakeTxId(2), fakeTxId(8), fakeTxId(9)])
+
+      var tx8node = tx10node.nextNodes[1]
+      assertNodeIdsEqualTxIds(tx8node.nextNodes, [fakeTxId(6), , fakeTxId(6)])
     })
 
     it('does not double add head', function() {
@@ -58,6 +61,11 @@ describe('TxGraph', function() {
       graph.addTx(txs[0])
 
       assertNodeIdsEqualTxIds(graph.heads, [fakeTxId(0), fakeTxId(3), fakeTxId(4), fakeTxId(15), fakeTxId(16)])
+    })
+
+    it('does not double add prevNode', function() {
+      var node = graph.findNodeById(fakeTxId(6))
+      assertNodeIdsEqualTxIds(node.prevNodes, [fakeTxId(8), fakeTxId(9)])
     })
   })
 

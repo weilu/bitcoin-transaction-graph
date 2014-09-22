@@ -40,6 +40,7 @@ function buildTxs() {
   txs[5].addInput(fakeTxId(6), 0)
 
   txs[6].addInput(fakeTxId(8), 0)
+  txs[6].addInput(fakeTxId(8), 2)
   txs[6].addInput(fakeTxId(9), 1)
 
   txs[7].addInput(fakeTxId(6), 1)

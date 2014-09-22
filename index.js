@@ -8,7 +8,8 @@ function TxGraph() {
 }
 
 TxGraph.prototype.addTx = function(tx) {
-  var node = findNodeById(tx.getId(), this.heads) || new Node(tx.getId())
+  var id = tx.getId()
+  var node = findNodeById(id, this.heads) || new Node(id)
   if(node.nextNodes.length === 0 && this.heads.indexOf(node) < 0) {
     this.heads.push(node)
   }
@@ -32,7 +33,9 @@ TxGraph.prototype.addTx = function(tx) {
 
     n.nextNodes[index] = node
 
-    if(node.prevNodes.indexOf(n) < 0) {
+    if(node.prevNodes.every(function(p) {
+      return p.id !== n.id
+    })) {
       node.prevNodes.push(n)
     }
   }, this)
