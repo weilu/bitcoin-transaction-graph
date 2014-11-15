@@ -229,9 +229,12 @@ describe('TxGraph', function() {
             assert.equal(feesAndValues[input.prevTx.txid].value, input.prevTx.ins[0].prevTx.value)
           })
         })
+
+        it('my address is none of the inputs nor outputs', function() {
+          var feesAndValues = graph.calculateFeesAndValues("mwfpNLSMH78n8unueTdZxSkXz1p1uAuMMf", testnet)
+          assert.equal(feesAndValues[tx.txid].value, null)
+        })
       })
-
     })
-
   })
 })

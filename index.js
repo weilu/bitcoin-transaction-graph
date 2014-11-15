@@ -216,10 +216,13 @@ function calculateFeeAndValue(tx, prevNodes, addresses, network) {
     memo.fee = memo.fee + output.value
 
     var value = getOutputValue(output, addresses, network)
-    if(value) memo.value += value
+    if(value) {
+      memo.value += value
+      memo.relevant = true
+    }
 
     return memo
-  }, {fee: 0, value: 0})
+  }, {fee: 0, value: 0, relevant: false})
 
   if(isNaN(inputFeeAndValue.fee)) return {};
 
@@ -227,14 +230,18 @@ function calculateFeeAndValue(tx, prevNodes, addresses, network) {
     memo.fee = memo.fee + output.value
 
     var value = getOutputValue(output, addresses, network)
-    if(value) memo.value += value
+    if(value) {
+      memo.value += value
+      memo.relevant = true
+    }
 
     return memo
-  }, {fee: 0, value: 0})
+  }, {fee: 0, value: 0, relevant: false})
 
+  var relevant = inputFeeAndValue.relevant || outputFeeAndValue.relevant
   return {
     fee: inputFeeAndValue.fee - outputFeeAndValue.fee,
-    value: outputFeeAndValue.value - inputFeeAndValue.value
+    value: relevant ? outputFeeAndValue.value - inputFeeAndValue.value : null
   }
 
   function getOutputValue(output, addresses, network) {
