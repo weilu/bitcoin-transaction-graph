@@ -13,8 +13,10 @@
     "url": "https://github.com/weilu/bitcoin-tx-graph.git"
   },
   "devDependencies": {
-    "bitcoinjs-lib": "^1.0.2",
     "mocha": "^1.21.4",
     "sinon": "^1.10.3"
+  },
+  "dependencies": {
+    "bitcoinjs-lib": "^1.2.0"
   }
 }
