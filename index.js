@@ -9,34 +9,29 @@ function TxGraph() {
 
 TxGraph.prototype.addTx = function(tx) {
   var id = tx.getId()
-  var node = findNodeById(id, this.heads) || new Node(id)
+  var node = this.findNodeById(id) || new Node(id)
   if(node.nextNodes.length === 0 && this.heads.indexOf(node) < 0) {
     this.heads.push(node)
   }
   node.tx = tx
 
-  var prevNodes = tx.ins.map(function(txIn) {
+  tx.ins.forEach(function(txIn) {
     var txinId = new Buffer(txIn.hash)
     Array.prototype.reverse.call(txinId)
     txinId = txinId.toString('hex')
 
-    var prevNode = findNodeById(txinId, this.heads) || new Node(txinId)
-    return { prevNode: prevNode, prevOutIndex: txIn.index }
-  }, this)
+    var prevNode = this.findNodeById(txinId) || new Node(txinId)
+    var prevOutIndex = txIn.index
 
-  prevNodes.forEach(function(pair) {
-    var n = pair.prevNode
-    var index = pair.prevOutIndex
-
-    var i = this.heads.indexOf(n)
+    var i = this.heads.indexOf(prevNode)
     if(i >= 0) this.heads.splice(i, 1);
 
-    n.nextNodes[index] = node
+    prevNode.nextNodes[prevOutIndex] = node
 
     if(node.prevNodes.every(function(p) {
-      return p.id !== n.id
+      return p.id !== prevNode.id
     })) {
-      node.prevNodes.push(n)
+      node.prevNodes.push(prevNode)
     }
   }, this)
 }

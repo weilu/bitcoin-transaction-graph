@@ -16,22 +16,42 @@ function assertNodeIdsEqualTxIdsIgnoreOrder(nodes, txids) {
 
 describe('TxGraph', function() {
   var txs = []
-  var graph = new TxGraph()
+  var graph = null;
 
   beforeEach(function() {
     txs = buildTxs()
+    graph = new TxGraph()
   })
 
   describe('addTx', function() {
     it('constructs the graph as expected', function() {
       txs.forEach(function(tx) { graph.addTx(tx) })
 
-      assertNodeIdsEqualTxIds(graph.heads, [fakeTxId(0), fakeTxId(3), fakeTxId(4), fakeTxId(15), fakeTxId(16)])
-      assertNodeIdsEqualTxIdsIgnoreOrder(graph.heads[0].prevNodes, [fakeTxId(13)])
-      assertNodeIdsEqualTxIdsIgnoreOrder(graph.heads[1].prevNodes, [fakeTxId(2), fakeTxId(5), fakeTxId(7)])
-      assertNodeIdsEqualTxIdsIgnoreOrder(graph.heads[1].prevNodes[0].prevNodes, [fakeTxId(1), fakeTxId(10)])
-      assertNodeIdsEqualTxIdsIgnoreOrder(graph.heads[1].prevNodes[1].prevNodes, [fakeTxId(6)])
-      assertNodeIdsEqualTxIdsIgnoreOrder(graph.heads[1].prevNodes[2].prevNodes, [fakeTxId(6)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(graph.heads, [fakeTxId(0), fakeTxId(3), fakeTxId(4), fakeTxId(15), fakeTxId(16)])
+
+      var tx0PrevNodes = graph.findNodeById(fakeTxId(0)).prevNodes
+      assertNodeIdsEqualTxIdsIgnoreOrder(tx0PrevNodes, [fakeTxId(13)])
+
+      var tx3PrevNodes = graph.findNodeById(fakeTxId(3)).prevNodes
+      assertNodeIdsEqualTxIdsIgnoreOrder(tx3PrevNodes, [fakeTxId(2), fakeTxId(5), fakeTxId(7)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(tx3PrevNodes[0].prevNodes, [fakeTxId(1), fakeTxId(10)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(tx3PrevNodes[1].prevNodes, [fakeTxId(6)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(tx3PrevNodes[2].prevNodes, [fakeTxId(6)])
+    })
+
+    it('does not depend on the order of transactions being added', function() {
+      txs.reverse().forEach(function(tx) { graph.addTx(tx) })
+
+      assertNodeIdsEqualTxIdsIgnoreOrder(graph.heads, [fakeTxId(0), fakeTxId(3), fakeTxId(4), fakeTxId(15), fakeTxId(16)])
+
+      var tx0PrevNodes = graph.findNodeById(fakeTxId(0)).prevNodes
+      assertNodeIdsEqualTxIdsIgnoreOrder(tx0PrevNodes, [fakeTxId(13)])
+
+      var tx3PrevNodes = graph.findNodeById(fakeTxId(3)).prevNodes
+      assertNodeIdsEqualTxIdsIgnoreOrder(tx3PrevNodes, [fakeTxId(2), fakeTxId(5), fakeTxId(7)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(tx3PrevNodes[0].prevNodes, [fakeTxId(1), fakeTxId(10)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(tx3PrevNodes[1].prevNodes, [fakeTxId(6)])
+      assertNodeIdsEqualTxIdsIgnoreOrder(tx3PrevNodes[2].prevNodes, [fakeTxId(6)])
     })
 
     it('orders the nextNodes according to output indexes', function() {
@@ -64,6 +84,9 @@ describe('TxGraph', function() {
     })
 
     it('does not double add prevNode', function() {
+      txs.forEach(function(tx) { graph.addTx(tx) })
+      txs.forEach(function(tx) { graph.addTx(tx) })
+
       var node = graph.findNodeById(fakeTxId(6))
       assertNodeIdsEqualTxIds(node.prevNodes, [fakeTxId(8), fakeTxId(9)])
     })
